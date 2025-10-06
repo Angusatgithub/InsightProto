@@ -1,5 +1,6 @@
-import { Group, Line } from "@shopify/react-native-skia";
+import { DashPathEffect, Group, Line, Text as SkiaText, matchFont } from "@shopify/react-native-skia";
 import React from "react";
+import { Platform } from "react-native";
 import {
   ChartConfig,
   ChartDimensions,
@@ -11,6 +12,11 @@ interface ChartGridProps {
   config: ChartConfig;
   dimensions: ChartDimensions;
 }
+
+  const littleFont = matchFont({
+    fontFamily: Platform.select({ ios: "Helvetica", default: "sans-serif" }),
+    fontSize: 11,
+  });
 
 export const ChartGrid: React.FC<ChartGridProps> = ({
   scales,
@@ -34,43 +40,66 @@ export const ChartGrid: React.FC<ChartGridProps> = ({
   const yMiddle = scales.y(yMid);
   const yBottom = scales.y(yMin);
 
-  // Calculate x positions for 6 vertical sections (7 lines total including start and end)
+  // Calculate x positions for vertical sections
   const verticalLines = [];
-  const sections = 6;
-  for (let i = 0; i <= sections; i++) {
-    const x = chartLeft + (chartWidth / sections) * i;
+  const sections = 3;
+  for (let i = 0; i < sections; i++) {
+    const x = (chartLeft + 64) + ((chartWidth - 32) / sections) * i;
     verticalLines.push(x);
   }
 
+  const topString = yTop.toString();
+  const midString = yMid.toString();
+  const botString = yBottom.toString();
+
   return (
-    <Group>
+    <Group
+    color={config.colors.grid}
+    style="stroke"
+    strokeWidth={1}
+    opacity={0.3}
+    >
+      {/* label in-line with each horizontal line */}
+      <SkiaText
+        x={chartRight - 24}
+        y={yTop + 2}
+        text={"fix this"}
+        color={config.colors.grid}
+        font={littleFont}
+        style="fill"
+      />
+      <SkiaText
+        x={chartRight - 24}
+        y={yMiddle + 2}
+        text={midString}
+        color={config.colors.grid}
+        font={littleFont}
+        style="fill"
+      />
+      <SkiaText
+        x={chartRight - 24}
+        y={yBottom + 2}
+        text={"fix this"}
+        color={config.colors.grid}
+        font={littleFont}
+        style="fill"
+      />
+      
+      <DashPathEffect intervals={[2, 10]} phase={0} />
+
+
       {/* Horizontal grid lines */}
       <Line
         p1={{ x: chartLeft, y: yTop }}
-        p2={{ x: chartRight, y: yTop }}
-        color={config.colors.grid}
-        style="stroke"
-        strokeWidth={0.5}
-        opacity={0.2}
-        //strokeDash={[4, 4]}
+        p2={{ x: chartRight - 28, y: yTop }}
       />
       <Line
         p1={{ x: chartLeft, y: yMiddle }}
-        p2={{ x: chartRight, y: yMiddle }}
-        color={config.colors.grid}
-        style="stroke"
-        strokeWidth={0.5}
-        opacity={0.2}
-        //strokeDash={[4, 4]}
+        p2={{ x: chartRight - 28, y: yMiddle }}
       />
       <Line
         p1={{ x: chartLeft, y: yBottom }}
-        p2={{ x: chartRight, y: yBottom }}
-        color={config.colors.grid}
-        style="stroke"
-        strokeWidth={0.5}
-        opacity={0.2}
-        //strokeDash={[4, 4]}
+        p2={{ x: chartRight - 28, y: yBottom }}
       />
 
       {/* Vertical grid lines*/}
@@ -79,11 +108,6 @@ export const ChartGrid: React.FC<ChartGridProps> = ({
           key={`vertical-${index}`}
           p1={{ x, y: chartTop }}
           p2={{ x, y: chartBottom }}
-          color={config.colors.grid}
-          style="stroke"
-          strokeWidth={0.5}
-          opacity={0.2}
-          //strokeDash={[4, 4]}
         />
       ))}
     </Group>

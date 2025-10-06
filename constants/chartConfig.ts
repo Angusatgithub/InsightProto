@@ -3,10 +3,10 @@ import { ChartConfig } from "../types/chart.types";
 export const CHART_CONFIG: ChartConfig = {
   dimensions: {
     width: 390,
-    height: 380,
-    marginTop: 0,
+    height: 480,
+    marginTop: 10,
     marginRight: 10,
-    marginBottom: 0,
+    marginBottom: 10,
     marginLeft: 10,
   },
   colors: {
