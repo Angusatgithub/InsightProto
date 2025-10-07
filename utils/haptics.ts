@@ -16,7 +16,7 @@ export const HAPTIC_CONFIG = {
   gestureStartStyle: Haptics.ImpactFeedbackStyle.Heavy,
 
   // Haptic for when gesture ends
-  gestureEndEnabled: false,
+  gestureEndEnabled: true,
 };
 
 /**

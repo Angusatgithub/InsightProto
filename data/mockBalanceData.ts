@@ -11,4 +11,6 @@ export const mockBalanceData: BalanceDataPoint[] = [
   { date: new Date("2025-08-01"), balance: 6900 },
   { date: new Date("2025-09-01"), balance: 7500 },
   { date: new Date("2025-10-01"), balance: 8200 },
+  { date: new Date("2025-11-01"), balance: 7800 },
+  { date: new Date("2025-12-01"), balance: 8500 },
 ];

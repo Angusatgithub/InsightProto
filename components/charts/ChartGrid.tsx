@@ -6,6 +6,7 @@ import {
   ChartDimensions,
   ChartScales,
 } from "../../types/chart.types";
+import { formatCurrencyCompact, formatMonth } from "../../utils/formatters";
 
 interface ChartGridProps {
   scales: ChartScales;
@@ -27,7 +28,6 @@ export const ChartGrid: React.FC<ChartGridProps> = ({
   const chartRight = dimensions.width - dimensions.marginRight;
   const chartTop = dimensions.marginTop;
   const chartBottom = dimensions.height - dimensions.marginBottom;
-  const chartWidth = chartRight - chartLeft;
 
   // Get y-axis domain for horizontal lines
   const yDomain = scales.y.domain();
@@ -40,36 +40,60 @@ export const ChartGrid: React.FC<ChartGridProps> = ({
   const yMiddle = scales.y(yMid);
   const yBottom = scales.y(yMin);
 
-  // Calculate x positions for vertical sections
-  const verticalLines = [];
-  const sections = 3;
-  for (let i = 0; i < sections; i++) {
-    const x = (chartLeft + 64) + ((chartWidth - 32) / sections) * i;
-    verticalLines.push(x);
+  // Get x-axis domain dates for month labels
+  const xDomain = scales.x.domain();
+  const startDate = xDomain[0];
+  const endDate = xDomain[1];
+  
+  // Generate month labels (quarterly - every 3 months for balanced spacing)
+  const monthLabels: { date: Date; x: number; label: string }[] = [];
+  const currentDate = new Date(startDate);
+  
+  // Offset by 1 month to center the grid lines (avoids lines on far edges)
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  
+  while (currentDate < endDate) {
+    const x = scales.x(currentDate);
+    const label = formatMonth(currentDate);
+    monthLabels.push({ date: new Date(currentDate), x, label });
+    
+    // Move to next quarter (every 3 months)
+    currentDate.setMonth(currentDate.getMonth() + 3);
   }
 
-  const topString = yTop.toString();
-  const midString = yMid.toString();
-  const botString = yBottom.toString();
+  // Format balance values for labels (from domain, not pixel positions)
+  // Use compact format for grid labels (e.g., $3.2k instead of $3,200)
+  const topString = formatCurrencyCompact(yMax);
+  const midString = formatCurrencyCompact(yMid);
+  const botString = formatCurrencyCompact(yMin);
+
+  // Measure label widths to position them and grid lines dynamically
+  const topWidth = littleFont.getTextWidth(topString);
+  const midWidth = littleFont.getTextWidth(midString);
+  const botWidth = littleFont.getTextWidth(botString);
+  const maxLabelWidth = Math.max(topWidth, midWidth, botWidth);
+  
+  // Add padding between grid lines and labels
+  const labelPadding = 4;
+  const gridLineEnd = chartRight - maxLabelWidth - labelPadding;
 
   return (
     <Group
     color={config.colors.grid}
     style="stroke"
     strokeWidth={1}
-    opacity={0.3}
     >
-      {/* label in-line with each horizontal line */}
+      {/* label in-line with each horizontal line - right-aligned */}
       <SkiaText
-        x={chartRight - 24}
+        x={chartRight - topWidth}
         y={yTop + 2}
-        text={"fix this"}
+        text={topString}
         color={config.colors.grid}
         font={littleFont}
         style="fill"
       />
       <SkiaText
-        x={chartRight - 24}
+        x={chartRight - midWidth}
         y={yMiddle + 2}
         text={midString}
         color={config.colors.grid}
@@ -77,39 +101,55 @@ export const ChartGrid: React.FC<ChartGridProps> = ({
         style="fill"
       />
       <SkiaText
-        x={chartRight - 24}
+        x={chartRight - botWidth}
         y={yBottom + 2}
-        text={"fix this"}
+        text={botString}
         color={config.colors.grid}
         font={littleFont}
         style="fill"
       />
       
-      <DashPathEffect intervals={[2, 10]} phase={0} />
+      <DashPathEffect intervals={[3, 12]} phase={2} />
 
 
       {/* Horizontal grid lines */}
       <Line
         p1={{ x: chartLeft, y: yTop }}
-        p2={{ x: chartRight - 28, y: yTop }}
+        p2={{ x: gridLineEnd, y: yTop }}
       />
       <Line
         p1={{ x: chartLeft, y: yMiddle }}
-        p2={{ x: chartRight - 28, y: yMiddle }}
+        p2={{ x: gridLineEnd, y: yMiddle }}
       />
       <Line
         p1={{ x: chartLeft, y: yBottom }}
-        p2={{ x: chartRight - 28, y: yBottom }}
+        p2={{ x: gridLineEnd, y: yBottom }}
       />
 
-      {/* Vertical grid lines*/}
-      {verticalLines.map((x, index) => (
+      {/* Vertical grid lines aligned to month labels */}
+      {monthLabels.map((month, index) => (
         <Line
           key={`vertical-${index}`}
-          p1={{ x, y: chartTop }}
-          p2={{ x, y: chartBottom }}
+          p1={{ x: month.x, y: chartTop }}
+          p2={{ x: month.x, y: chartBottom }}
         />
       ))}
+
+      {/* Month labels at bottom */}
+      {monthLabels.map((month, index) => {
+        const labelWidth = littleFont.getTextWidth(month.label);
+        return (
+          <SkiaText
+            key={`month-${index}`}
+            x={month.x - labelWidth / 2}
+            y={chartBottom + 24}
+            text={month.label}
+            color={config.colors.grid}
+            font={littleFont}
+            style="fill"
+          />
+        );
+      })}
     </Group>
   );
 };

@@ -21,3 +21,17 @@ export const formatDateLong = (date: Date): string => {
     year: "numeric",
   });
 };
+
+export const formatMonth = (date: Date): string => {
+  return date.toLocaleDateString("en-AU", {
+    month: "short",
+  }).toUpperCase();
+};
+
+export const formatCurrencyCompact = (value: number): string => {
+  if (value >= 1000) {
+    const thousands = value / 1000;
+    return `$${thousands.toFixed(1)}k`;
+  }
+  return `$${value.toFixed(0)}`;
+};

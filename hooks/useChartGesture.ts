@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import { runOnJS, useSharedValue } from "react-native-reanimated";
 import {
@@ -7,7 +7,6 @@ import {
   ChartScales,
 } from "../types/chart.types";
 import {
-  triggerDataPointHaptic,
   triggerGestureEndHaptic,
   triggerGestureStartHaptic,
 } from "../utils/haptics";
@@ -28,9 +27,6 @@ export const useChartGesture = (
   const touchX = useSharedValue(0);
   const touchY = useSharedValue(0);
   const isActive = useSharedValue(0);
-
-  // Track the last point index to detect when we move to a new point
-  const lastPointIndex = useRef<number | null>(null);
 
   // Pre-compute all point positions to avoid scale calculations in worklet
   const pointPositions = useMemo(() => {
@@ -71,22 +67,12 @@ export const useChartGesture = (
     [pointPositions, dimensions]
   );
 
-  const triggerHaptic = useCallback(() => {
-    triggerDataPointHaptic();
-  }, []);
-
   const updatePointJS = useCallback(
     (x: number) => {
       const result = findClosestPointJS(x);
 
       if (result) {
-        const { point: closest, index } = result;
-
-        // Trigger haptic only when moving to a new point
-        if (lastPointIndex.current !== index) {
-          triggerHaptic();
-          lastPointIndex.current = index;
-        }
+        const { point: closest } = result;
 
         touchX.value = closest.x;
         touchY.value = closest.y;
@@ -96,22 +82,23 @@ export const useChartGesture = (
         }
       }
     },
-    [findClosestPointJS, touchX, touchY, onPointSelected, triggerHaptic]
+    [findClosestPointJS, touchX, touchY, onPointSelected]
   );
 
   const gesture = Gesture.Pan()
     .onBegin((event) => {
+      'worklet';
       isActive.value = 1;
-      lastPointIndex.current = null; // Reset on new gesture
       runOnJS(triggerGestureStartHaptic)();
       runOnJS(updatePointJS)(event.x);
     })
     .onUpdate((event) => {
+      'worklet';
       runOnJS(updatePointJS)(event.x);
     })
     .onEnd(() => {
+      'worklet';
       isActive.value = 0;
-      lastPointIndex.current = null; // Reset when gesture ends
       runOnJS(triggerGestureEndHaptic)();
       if (onPointSelected) {
         runOnJS(onPointSelected)(null);
